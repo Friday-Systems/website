@@ -364,11 +364,22 @@ html.touch .abmsg-touch {
   bottom: 5vh;
   transform: translateY(115%);
   will-change: transform;
+  /* site feedback: the riser lines are fit-to-width, so on wider-than-16:9
+     screens the block outgrows the viewport (email row pushed off-screen,
+     statement buried behind the glyphs). Cap the fit at the width a 16:9
+     viewport of the same height would give (94vw at 16:9 = 94 × 16/9 =
+     167.1vh) and center the capped block. At exactly 16:9 the cap equals the
+     natural width, so classic screens are pixel-identical. */
+  max-width: 167.1vh;
+  margin: 0 auto;
 }
 .abgiant .mailrow {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 1.8vh;
+  /* the mail link must win any hit-test overlap with the giant glyphs */
+  position: relative;
+  z-index: 1;
 }
 .abgiant .mail {
   display: inline-block;
@@ -387,6 +398,7 @@ html.touch .abgiant .mail {
   letter-spacing: 0.005em;
   text-transform: uppercase;
   color: var(--ink);
+  pointer-events: none; /* display text never captures clicks (email above must stay clickable) */
 }
 
 /* ---------------- scene 2: technology cards ---------------- */

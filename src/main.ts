@@ -87,6 +87,7 @@ class FSPage {
   _f2Prev = 0;
   _abTop: number | undefined = undefined;
   _abW = -1;
+  _abH = -1;
   _abRefit = false;
   _abFontsWait = false;
 
@@ -1186,8 +1187,13 @@ class FSPage {
     const vh = this._vh();
     this._scrollStep(vh);
     const abW = window.innerWidth;
-    if (this._abW !== abW || this._abRefit) {
+    // the riser cap (max-width: 167.1vh) makes the giant fit height-dependent;
+    // desktop re-fits on height changes too. Touch keeps width-only (browser
+    // chrome collapse jitters innerHeight on every scroll reversal there).
+    const abH = this._touch ? 0 : window.innerHeight;
+    if (this._abW !== abW || this._abH !== abH || this._abRefit) {
       this._abW = abW;
+      this._abH = abH;
       this._abRefit = false;
       this._fitAbout();
       this._idxGeo = null;
