@@ -1,0 +1,224 @@
+/* Friday Systems — shared base: design tokens, chrome (header/footer), cookie banner. */
+
+@property --acc {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #35D0DB;
+}
+@property --acc2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #4D5FE0;
+}
+/* fallback for engines without @property */
+:root {
+  --acc: #35D0DB;
+  --acc2: #4D5FE0;
+}
+
+body {
+  /* design tokens — the single source for colors, type, motion */
+  --ink: #F0F3F7;
+  --navy: #0D1024;
+  --navy-deep: #090B1A;
+  --panel: #141A3D;
+  --body-dim: #D5DBE8;
+  --mut: #AEB6CB;
+  --mut2: #6E7690;
+  --idx-dim: rgba(174, 182, 203, 0.5);
+  --line: rgba(240, 243, 247, 0.28);
+  --hint-ink: rgba(240, 243, 247, 0.75);
+  --stroke: rgba(240, 243, 247, 0.85);
+  --grad: linear-gradient(100deg, var(--acc2) 5%, var(--acc) 95%);
+  --card-fade: linear-gradient(180deg, rgba(9, 11, 26, 0) 34%, rgba(9, 11, 26, 0.88) 100%);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --disp: 'Big Shoulders Display', sans-serif;
+  --tsh: 0 2px 12px rgba(9, 11, 26, 0.7);
+  margin: 0;
+  background: var(--navy);
+  color: var(--ink);
+  font-family: 'Switzer', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--acc);
+}
+::selection {
+  background: var(--acc);
+  color: var(--navy);
+}
+
+/* ---------------- header ---------------- */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  pointer-events: none;
+}
+.site-header a {
+  display: block;
+  width: 120px;
+  pointer-events: auto;
+}
+.site-header img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+html.touch .site-header {
+  padding: 16px 20px;
+}
+html.touch .site-header a {
+  width: 96px;
+}
+
+/* ---------------- footer ---------------- */
+.site-footer {
+  border-top: 1px solid rgba(240, 243, 247, 0.1);
+  padding: 40px 32px;
+}
+.site-footer .inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.site-footer .support {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--mut2);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+.site-footer .links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.site-footer .links a {
+  font-size: 12.5px;
+  color: var(--mut);
+}
+.site-footer .copyright {
+  font-size: 12.5px;
+  color: var(--mut2);
+}
+.foot-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: 'Switzer', 'Helvetica Neue', sans-serif;
+  font-size: 12.5px;
+  color: var(--mut);
+  cursor: pointer;
+  transition: color 0.3s var(--ease);
+}
+.foot-btn:hover {
+  color: var(--acc);
+}
+html.touch .site-footer {
+  padding: 12px 20px;
+}
+html.touch .site-footer .inner {
+  gap: 12px;
+}
+html.touch .site-footer .links a,
+html.touch .foot-btn {
+  padding: 8px 4px;
+}
+
+/* ---------------- cookie banner (design: Cookie Banner.dc.html) ---------------- */
+@keyframes cb-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.cb-card {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 80;
+  width: min(340px, calc(100vw - 48px));
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid rgba(240, 243, 247, 0.14);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+  padding: 20px 20px 18px;
+  animation: cb-rise 0.9s var(--ease) both;
+}
+.cb-title {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 21px;
+  line-height: 0.94;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.cb-copy {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--mut);
+  text-wrap: pretty;
+}
+.cb-copy a {
+  color: var(--body-dim);
+  border-bottom: 1px solid var(--line);
+  transition: color 0.3s var(--ease);
+}
+.cb-copy a:hover {
+  color: var(--acc);
+}
+.cb-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.cb-btn {
+  flex: 1;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-family: 'Switzer', sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.cb-btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 243, 247, 0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cb-card {
+    animation: none;
+  }
+}

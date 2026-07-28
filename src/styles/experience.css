@@ -1,0 +1,686 @@
+/* Friday Systems — experience page (index). Every rule mirrors the design
+   reference inline styles; the `html.touch` fork mirrors the mobile DC. */
+
+body {
+  --fs-hl: clamp(168px, 24vw, 420px);
+  --fs-belt: clamp(60px, 9.6vw, 168px);
+  --fs-ko: clamp(70px, 9.8vw, 180px);
+  --fs-card: clamp(26px, 2.6vw, 52px);
+  --fs-copy: clamp(14px, 1.05vw, 17px);
+  --card-wide: 52.4vw;
+  --card-narrow: 18.4vw;
+  --copy-w: 46vw;
+  --film-base: saturate(0.78) contrast(1.08);
+  transition: --acc 0.6s ease, --acc2 0.6s ease;
+}
+html.touch body {
+  --fs-hl: clamp(150px, min(44vw, 52svh), 560px);
+  --fs-belt: clamp(44px, 13vw, 168px);
+  --fs-ko: clamp(34px, 9.5vw, 180px);
+  --fs-card: clamp(22px, 5.6vw, 52px);
+  --fs-copy: clamp(14px, 3.6vw, 17px);
+  --card-wide: 56svh;
+  --card-narrow: 9.5svh;
+  --copy-w: 88vw;
+  overscroll-behavior: none;
+}
+
+/* ---------------- entrance loader ---------------- */
+.entry {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--navy-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: opacity;
+}
+.entry-grid {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  will-change: transform;
+}
+html.touch .entry-grid {
+  transform: scale(0.72);
+}
+.entry-piece {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.entry-piece div {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: var(--ink);
+}
+.entry-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* ---------------- rotate lock (landscape phones only) ---------------- */
+@keyframes fs-rot-hint {
+  0%, 18% {
+    transform: rotate(90deg);
+  }
+  42%, 78% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(90deg);
+  }
+}
+.rotate-ov {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: var(--navy-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  text-align: center;
+}
+.rotate-ov img {
+  display: block;
+  width: 96px;
+  height: auto;
+}
+.rotate-frame {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rotate-phone {
+  width: 34px;
+  height: 58px;
+  border: 2px solid var(--stroke);
+  border-radius: 8px;
+  position: relative;
+  animation: fs-rot-hint 3.2s var(--ease) infinite;
+}
+.rotate-phone i {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 2px;
+  background: var(--acc);
+}
+.rotate-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.rotate-title {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.rotate-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+
+/* ---------------- spray current background ---------------- */
+.spray-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+}
+html.touch .spray-wrap {
+  right: auto;
+  bottom: auto;
+  width: 100vw;
+  height: 100lvh;
+}
+spray-current {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------------- bottom index (top-right on touch) ---------------- */
+.idx {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+}
+.idx-items {
+  display: flex;
+  gap: 26px;
+  align-items: baseline;
+}
+.idx-it {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--idx-dim);
+  white-space: nowrap;
+  text-shadow: var(--tsh);
+  transition: all 0.5s var(--ease);
+  padding: 6px 2px;
+}
+.idx-track {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: rgba(174, 182, 203, 0.28);
+}
+.idx-fl {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--acc2), var(--acc));
+  transform: scaleX(0);
+  transform-origin: left;
+  display: block;
+}
+.idx-bx {
+  position: absolute;
+  left: -4px;
+  top: -3.5px;
+  width: 8px;
+  height: 8px;
+  background: var(--acc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 50%, transparent);
+  display: block;
+}
+html.touch .idx {
+  left: auto;
+  bottom: auto;
+  top: 10px;
+  right: 12px;
+  transform: none;
+  align-items: stretch;
+  gap: 0;
+}
+html.touch .idx-items {
+  gap: 8px;
+}
+html.touch .idx-it {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 8px 3px;
+}
+
+/* ---------------- hero hint ---------------- */
+.hero-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 76px;
+  transform: translateX(-50%);
+  z-index: 60;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(174, 182, 203, 0.55);
+  pointer-events: none;
+  white-space: nowrap;
+  text-shadow: var(--tsh);
+  transition: opacity 0.5s ease;
+}
+.hero-hint .hint-touch {
+  display: none;
+}
+html.touch .hero-hint {
+  bottom: 28px;
+}
+html.touch .hero-hint .hint-desktop {
+  display: none;
+}
+html.touch .hero-hint .hint-touch {
+  display: inline;
+}
+
+/* ---------------- tunnel + stage ---------------- */
+.tunnel {
+  position: relative;
+  height: 1100vh;
+}
+.anchor {
+  position: absolute;
+  height: 1px;
+  width: 1px;
+}
+#solution {
+  top: 18.182%;
+}
+#technology {
+  top: 72.728%;
+}
+#about {
+  top: 81.819%;
+}
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+html.touch .stage {
+  height: 100svh;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+.scene[data-scene='2'],
+.scene[data-scene='3'] {
+  visibility: hidden;
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.scene[data-scene='1'] .frame {
+  will-change: border-radius;
+}
+.scene[data-scene='2'] .frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scene[data-scene='0'] .frame {
+  background: #090B1A;
+}
+
+/* ---------------- scene 3: about + contact ---------------- */
+.abmsg {
+  position: absolute;
+  left: 6vw;
+  right: 6vw;
+  top: 50%;
+  transform: translateY(-50%);
+  will-change: transform, opacity;
+  font-family: var(--disp);
+  font-weight: 700;
+  color: var(--ink);
+}
+.abmsg-desktop {
+  transform-origin: left top;
+  line-height: 1.08;
+}
+.abmsg-touch {
+  display: none;
+  line-height: 1.12;
+  font-size: clamp(30px, 8.4vw, 64px);
+}
+.abmsg-touch > div {
+  text-wrap: pretty;
+}
+.abmsg-touch > div + div {
+  margin-top: 0.5em;
+}
+html.touch .abmsg-desktop {
+  display: none;
+}
+html.touch .abmsg-touch {
+  display: block;
+}
+[data-abfit] {
+  display: table;
+  white-space: nowrap;
+}
+.abgiant {
+  position: absolute;
+  left: 3vw;
+  right: 3vw;
+  bottom: 5vh;
+  transform: translateY(115%);
+  will-change: transform;
+}
+.abgiant .mailrow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.8vh;
+}
+.abgiant .mail {
+  display: inline-block;
+  font-size: clamp(16px, 1.3vw, 20px);
+  font-weight: 500;
+  color: var(--acc);
+}
+html.touch .abgiant .mail {
+  font-size: clamp(16px, 4vw, 20px);
+  padding: 12px 0;
+}
+.giant-line {
+  font-family: var(--disp);
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ---------------- scene 2: technology cards ---------------- */
+.cards {
+  display: flex;
+  gap: 1.4vw;
+  align-items: stretch;
+  width: 92vw;
+  height: 64vh;
+}
+html.touch .cards {
+  flex-direction: column;
+  gap: 12px;
+  width: calc(100vw - 32px);
+  height: auto;
+}
+.card {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--card-narrow);
+  min-width: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  transition: width 0.9s var(--ease), height 0.9s var(--ease), transform 0.5s var(--ease);
+}
+.card[data-card='0'] {
+  width: var(--card-wide);
+}
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-8px);
+  }
+}
+html.touch .card {
+  width: 100%;
+  height: var(--card-narrow);
+  min-height: 0;
+}
+html.touch .card[data-card='0'] {
+  height: var(--card-wide);
+}
+.card video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: var(--film-base) brightness(0.5);
+  transition: filter 0.7s ease;
+}
+.card[data-card='0'] video {
+  filter: var(--film-base) brightness(0.92);
+}
+.card .cfade {
+  position: absolute;
+  inset: 0;
+  background: var(--card-fade);
+}
+.card .cbody {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 24px 28px;
+}
+html.touch .card .cbody {
+  padding: 14px 16px;
+}
+.cfull {
+  display: flex;
+  flex-direction: column;
+}
+.ctitle {
+  font-family: var(--disp);
+  font-weight: 800;
+  line-height: 0.96;
+  text-transform: uppercase;
+  font-size: var(--fs-card);
+  color: var(--ink);
+  text-wrap: balance;
+}
+.cfull p {
+  margin: 0;
+  color: var(--body-dim);
+  font-size: var(--fs-copy);
+  line-height: 1.55;
+  max-width: 56ch;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease, max-height 0.9s var(--ease), margin 0.9s var(--ease);
+}
+.card[data-card='0'] .cfull p {
+  margin: 12px 0 0;
+  max-height: 200px;
+  opacity: 1;
+}
+.chint {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hint-ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+.card[data-card='0'] .chint {
+  opacity: 0;
+}
+html.touch .chint {
+  display: none;
+}
+
+/* ---------------- scene 1: proof film + value belt + deployments ---------------- */
+.navy-bg {
+  position: absolute;
+  inset: 0;
+  background: #0D1024 radial-gradient(120% 90% at 50% 115%, #141A3D 0%, #0D1024 62%);
+}
+.film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  filter: var(--film-base) brightness(0.68);
+  will-change: opacity;
+}
+.grade {
+  position: absolute;
+  inset: 0;
+  background: var(--acc);
+  mix-blend-mode: color;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+.belt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cm {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  will-change: transform;
+}
+.cm .pair {
+  position: relative;
+}
+.cm-txt {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: var(--fs-belt);
+  line-height: 0.94;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cm [data-fill] {
+  color: var(--ink);
+}
+.cm [data-outline] {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--stroke);
+}
+.ko {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  will-change: opacity;
+}
+.kt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: var(--fs-ko);
+  line-height: 0.92;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  will-change: transform, opacity;
+}
+.solid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.solid > div {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: var(--fs-ko);
+  line-height: 0.92;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.solid > div:first-child {
+  color: var(--ink);
+}
+
+/* ---------------- scene 0: pallet hero ---------------- */
+.pallet-mount {
+  position: absolute;
+  inset: 0;
+}
+pallet-hero {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------------- headlines ---------------- */
+.hl {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%) scale(0.3333);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+.hl[data-hl='0'] {
+  left: 5%;
+}
+.hl[data-hl='1'] {
+  right: 5%;
+}
+html.touch .hl,
+html.touch .hl[data-hl='0'],
+html.touch .hl[data-hl='1'] {
+  left: -100%;
+  right: -100%;
+  text-align: center;
+}
+.hl-line {
+  font-family: var(--disp);
+  font-size: var(--fs-hl);
+  line-height: 0.94;
+  font-weight: 800;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.hl-spacer {
+  visibility: hidden;
+}
+html.touch .hl-spacer {
+  display: none;
+}
+
+/* ---------------- explosion scrub video ---------------- */
+.exp {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* gradient words — the accent wipe targets [data-gw]; LAST in the sheet so it
+   wins every color tie (.hl-line, .giant-line, …) at equal specificity */
+[data-gw] {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

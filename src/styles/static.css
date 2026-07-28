@@ -1,0 +1,93 @@
+/* Friday Systems — Legal / Privacy static pages. Navy background, Switzer body
+   at ~65ch 16px/1.7, Big Shoulders Display page title, fixed header, same
+   footer. No scroll hijack, no WebGL. */
+
+.doc {
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 172px 24px 96px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--body-dim);
+}
+html.touch .doc {
+  padding-top: 128px;
+}
+.doc h1 {
+  font-family: var(--disp);
+  font-weight: 800;
+  font-size: clamp(44px, 7vw, 84px);
+  line-height: 0.94;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 40px;
+}
+.doc h2 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 0.96;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 72px 0 20px;
+}
+.doc h3 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin: 40px 0 10px;
+}
+.doc p {
+  margin: 0 0 16px;
+}
+.doc ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+.doc li {
+  margin: 6px 0;
+}
+.doc a {
+  color: var(--body-dim);
+  border-bottom: 1px solid var(--line);
+  transition: color 0.3s var(--ease);
+}
+.doc a:hover {
+  color: var(--acc);
+}
+.doc strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.doc em {
+  font-style: italic;
+}
+.doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+.doc th,
+.doc td {
+  text-align: left;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid rgba(240, 243, 247, 0.12);
+  vertical-align: top;
+}
+.doc th {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.doc .updated {
+  color: var(--mut2);
+  font-size: 13px;
+  font-style: italic;
+  margin-top: 56px;
+}

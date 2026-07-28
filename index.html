@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Friday Systems — Mixed Palletizing, Solved.</title>
+  <meta name="description" content="Friday Systems builds AI that gives robots the skills humans use in logistics. Mixed palletizing, solved: any box in, any order — installed in days, payback under two years.">
+  <script>
+    // Device-tier fork: input capability (coarse pointer), not user agent.
+    // ?input=touch|fine overrides for tuning on desk.
+    (function () {
+      var t = matchMedia('(pointer: coarse)').matches;
+      var m = location.search.match(/[?&]input=(touch|fine)/);
+      if (m) t = m[1] === 'touch';
+      if (t) document.documentElement.classList.add('touch');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://fonts.bunny.net/css?family=big-shoulders-display:700,800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet">
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+
+<div class="entry" data-entry>
+  <div class="entry-grid" data-entry-grid>
+    <div class="entry-piece" data-entry-piece data-spin="1">
+      <div style="left:1px;top:85px"></div>
+      <div style="left:29px;top:85px"></div>
+      <div style="left:57px;top:85px"></div>
+      <div style="left:57px;top:57px"></div>
+    </div>
+    <div class="entry-piece" data-entry-piece data-spin="0">
+      <div style="left:85px;top:1px"></div>
+      <div style="left:85px;top:29px"></div>
+      <div style="left:85px;top:57px"></div>
+      <div style="left:85px;top:85px"></div>
+    </div>
+    <div class="entry-piece" data-entry-piece data-spin="1">
+      <div style="left:1px;top:57px"></div>
+      <div style="left:29px;top:57px"></div>
+      <div style="left:29px;top:29px"></div>
+      <div style="left:57px;top:29px"></div>
+    </div>
+    <div class="entry-piece" data-entry-piece data-spin="0">
+      <div style="left:1px;top:1px"></div>
+      <div style="left:29px;top:1px"></div>
+      <div style="left:57px;top:1px"></div>
+      <div style="left:1px;top:29px"></div>
+    </div>
+    <div class="entry-fill" data-entry-fill></div>
+  </div>
+</div>
+
+<div class="rotate-ov" data-rotate data-noresolve>
+  <img src="assets/logo-friday-white.svg" alt="FRIDAY SYSTEMS">
+  <div class="rotate-frame">
+    <div class="rotate-phone"><i></i></div>
+  </div>
+  <div class="rotate-copy">
+    <div class="rotate-title">Rotate your phone</div>
+    <div class="rotate-sub">This experience is built for portrait</div>
+  </div>
+</div>
+
+<div class="spray-wrap" data-spray-wrap>
+  <spray-current></spray-current>
+</div>
+
+<header class="site-header">
+  <a href="#top" aria-label="Friday Systems">
+    <img src="assets/logo-friday-white.svg" alt="FRIDAY SYSTEMS">
+  </a>
+</header>
+
+<div class="idx" data-idx>
+  <div class="idx-items">
+    <a class="idx-it" data-idx-it href="#solution">Solution</a>
+    <a class="idx-it" data-idx-it href="#technology">Technology</a>
+    <a class="idx-it" data-idx-it href="#about">Contact</a>
+  </div>
+  <div class="idx-track">
+    <span class="idx-fl" data-idx-fl></span>
+    <span class="idx-bx" data-idx-bx></span>
+  </div>
+</div>
+
+<div class="hero-hint" data-hero-hint>
+  <span class="hint-desktop">Hover and click on the pallet</span>
+  <span class="hint-touch">Tap and scroll</span>
+</div>
+
+<div id="top" class="tunnel">
+  <div id="solution" class="anchor"></div>
+  <div id="technology" class="anchor"></div>
+  <div id="about" class="anchor"></div>
+
+  <div class="stage" data-stage>
+
+    <div class="scene" data-scene="3">
+      <div class="frame" data-frame>
+        <div class="abmsg abmsg-desktop" data-abmsg-desktop>
+          <div data-abfit data-fit-group="abmsg">We build AI that gives robots the skills humans use in logistics.</div>
+          <div data-abfit data-fit-group="abmsg">Solving mixed palletizing was the first step. <span data-gw>It won&rsquo;t be the last.</span></div>
+        </div>
+        <div class="abmsg abmsg-touch" data-abmsg-touch>
+          <div>We build AI that gives robots the skills humans use in logistics.</div>
+          <div>Solving mixed palletizing was the first step. <span data-gw>It won&rsquo;t be the last.</span></div>
+        </div>
+        <div id="contact" class="abgiant" data-abgiant>
+          <div class="mailrow">
+            <a class="mail" href="mailto:eduardo@friday-systems.com">eduardo@friday-systems.com &nbsp;&rarr;</a>
+          </div>
+          <div class="giant-line" data-abfit>Tell us about</div>
+          <div class="giant-line" data-abfit data-gw>your pallets</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene" data-scene="2">
+      <div class="frame" data-frame>
+        <div class="cards" data-cards>
+          <div class="card" data-card="0">
+            <video data-cfilm muted loop playsinline preload="metadata"
+              data-src="assets/videos/Tech-01.mp4" data-src-touch="assets/videos/mobile/Tech-01.mp4"></video>
+            <div class="cfade"></div>
+            <div class="cbody">
+              <div class="cfull" data-cfull>
+                <div class="ctitle">AI that handles <span data-gw>the real world.</span></div>
+                <p>AI built from the ground up to assemble complex pallets with human-level judgment.</p>
+              </div>
+            </div>
+            <div class="chint" data-chint>Explore +</div>
+          </div>
+          <div class="card" data-card="1">
+            <video data-cfilm muted loop playsinline preload="metadata"
+              data-src="assets/videos/Tech-02.mp4" data-src-touch="assets/videos/mobile/Tech-02.mp4"></video>
+            <div class="cfade"></div>
+            <div class="cbody">
+              <div class="cfull" data-cfull>
+                <div class="ctitle">Dynamic <span data-gw>to the core.</span></div>
+                <p>Every new box changes the puzzle. The system adjusts on the fly and generates a new plan in milliseconds.</p>
+              </div>
+            </div>
+            <div class="chint" data-chint>Explore +</div>
+          </div>
+          <div class="card" data-card="2">
+            <video data-cfilm muted loop playsinline preload="metadata"
+              data-src="assets/videos/Tech-03.mp4" data-src-touch="assets/videos/mobile/Tech-03.mp4"></video>
+            <div class="cfade"></div>
+            <div class="cbody">
+              <div class="cfull" data-cfull>
+                <div class="ctitle">One software, <span data-gw>any hardware</span></div>
+                <p>Works with any robot, adapts to every layout. Designed for 24-hour operations in high-throughput logistics.</p>
+              </div>
+            </div>
+            <div class="chint" data-chint>Explore +</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene" data-scene="1">
+      <div class="frame" data-frame>
+        <div class="navy-bg" data-navy></div>
+        <video class="film" data-film muted autoplay loop playsinline preload="auto"
+          data-src="assets/videos/Proof.mp4" data-src-touch="assets/videos/mobile/Proof.mp4"></video>
+        <div class="grade" data-grade></div>
+        <div class="belt" data-belt>
+          <div class="cm" data-cm="0">
+            <div class="pair">
+              <div class="cm-txt" data-fill>Any box in</div>
+              <div class="cm-txt" data-outline aria-hidden="true">Any box in</div>
+            </div>
+            <div class="pair">
+              <div class="cm-txt" data-fill><span data-gw>any order</span></div>
+              <div class="cm-txt" data-outline aria-hidden="true">any order</div>
+            </div>
+          </div>
+          <div class="cm" data-cm="1">
+            <div class="pair">
+              <div class="cm-txt" data-fill>Installed</div>
+              <div class="cm-txt" data-outline aria-hidden="true">Installed</div>
+            </div>
+            <div class="pair">
+              <div class="cm-txt" data-fill><span data-gw>in days.</span></div>
+              <div class="cm-txt" data-outline aria-hidden="true">in days.</div>
+            </div>
+          </div>
+          <div class="cm" data-cm="2">
+            <div class="pair">
+              <div class="cm-txt" data-fill>Payback under</div>
+              <div class="cm-txt" data-outline aria-hidden="true">Payback under</div>
+            </div>
+            <div class="pair">
+              <div class="cm-txt" data-fill><span data-gw>two years.</span></div>
+              <div class="cm-txt" data-outline aria-hidden="true">two years.</div>
+            </div>
+          </div>
+        </div>
+        <div class="ko" data-ko>
+          <div class="kt" data-kt><div>Running full shifts</div><div>at leading logistics.</div></div>
+        </div>
+        <div class="solid" data-solid>
+          <div>Running full shifts</div>
+          <div><span data-gw>at leading logistics.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene" data-scene="0">
+      <div class="frame" data-frame>
+        <div class="pallet-mount" role="img" aria-label="Interactive pallet of mixed boxes. Click to scatter them, click and hold to gather them; the stack always rebuilds itself, box by box. Each press shifts the accent colors.">
+          <pallet-hero></pallet-hero>
+        </div>
+      </div>
+    </div>
+
+    <div class="hl" data-hl="0">
+      <div class="hl-line">Mixed</div>
+      <div class="hl-line">palletizing,</div>
+    </div>
+    <div class="hl" data-hl="1">
+      <div class="hl-line hl-spacer">Mixed</div>
+      <div class="hl-line" data-gw>solved.</div>
+    </div>
+    <video class="exp" data-exp muted playsinline preload="auto"></video>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p class="support">Supported by CDTI and ENISA</p>
+    <div class="links">
+      <a href="legal.html">Legal</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://www.linkedin.com/company/friday-systems" target="_blank" rel="noopener">LinkedIn</a>
+      <button type="button" class="foot-btn" data-cookie-settings>Cookie settings</button>
+      <span class="copyright">&copy; Friday Systems</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
