@@ -10,7 +10,13 @@
       var t = matchMedia('(pointer: coarse)').matches;
       var m = location.search.match(/[?&]input=(touch|fine)/);
       if (m) t = m[1] === 'touch';
-      if (t) document.documentElement.classList.add('touch');
+      if (t) {
+        document.documentElement.classList.add('touch');
+        // viewport-meta ignored (e.g. "Desktop site" mode): rescale fixed chrome
+        var r = Math.min(window.innerWidth, window.innerHeight) /
+                (Math.min(screen.width, screen.height) || window.innerWidth);
+        if (r > 1.2) document.documentElement.style.setProperty('--vp-fix', Math.min(r, 3).toFixed(3));
+      }
     })();
   </script>
   <link rel="preconnect" href="https://fonts.bunny.net">

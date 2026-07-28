@@ -222,7 +222,9 @@ html.touch .idx {
   bottom: auto;
   top: 10px;
   right: 12px;
-  transform: none;
+  /* --vp-fix: fixed-chrome compensation for ignored viewport meta (1 normally) */
+  transform: scale(var(--vp-fix, 1));
+  transform-origin: right top;
   align-items: stretch;
   gap: 0;
 }
@@ -257,6 +259,8 @@ html.touch .idx-it {
 }
 html.touch .hero-hint {
   bottom: 28px;
+  transform: translateX(-50%) scale(var(--vp-fix, 1));
+  transform-origin: center bottom;
 }
 html.touch .hero-hint .hint-desktop {
   display: none;

@@ -81,6 +81,10 @@ html.touch .site-header {
 }
 html.touch .site-header a {
   width: 96px;
+  /* --vp-fix (head script) compensates browsers that ignore the viewport meta
+     and lay out at ~980px; 1 everywhere else */
+  transform: scale(var(--vp-fix, 1));
+  transform-origin: left top;
 }
 
 /* ---------------- footer ---------------- */
@@ -144,15 +148,17 @@ html.touch .foot-btn {
 /* ---------------- cookie banner (design: Cookie Banner.dc.html) ---------------- */
 @keyframes cb-rise {
   from {
-    transform: translateY(24px);
+    transform: translateY(24px) scale(var(--vp-fix, 1));
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(var(--vp-fix, 1));
     opacity: 1;
   }
 }
 .cb-card {
+  transform: scale(var(--vp-fix, 1));
+  transform-origin: left bottom;
   position: fixed;
   left: 24px;
   bottom: 24px;
