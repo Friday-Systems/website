@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://fonts.bunny.net/css?family=big-shoulders-display:700,800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      --ink:#F0F3F7; --navy:#0D1024; --navy-deep:#090B1A; --panel:#141A3D;
+      --body-dim:#D5DBE8; --mut:#AEB6CB; --mut2:#6E7690;
+      --line:rgba(240,243,247,0.28); --hint-ink:rgba(240,243,247,0.75);
+      --grad:linear-gradient(100deg, var(--acc2) 5%, var(--acc) 95%);
+      --ease:cubic-bezier(0.22,1,0.36,1); --disp:'Big Shoulders Display', sans-serif;
+      --tsh:0 2px 12px rgba(9,11,26,0.7);
+      margin:0; background:var(--navy); color:var(--ink); font-family:'Switzer','Helvetica Neue',sans-serif; -webkit-font-smoothing:antialiased;
+    }
+    a { color: var(--ink); text-decoration: none; }
+    a:hover { color: var(--acc); }
+    ::selection { background: var(--acc); color: var(--navy); }
+    @keyframes cb-rise { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</helmet>
+
+<div style="position:relative;width:100%;height:100vh;overflow:hidden;background:radial-gradient(120% 90% at 50% 110%, #10163A 0%, var(--navy) 55%, var(--navy-deep) 100%)">
+  <div style="position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;user-select:none">
+    <div style="font-family:var(--disp);font-size:clamp(80px,11vw,190px);line-height:0.94;font-weight:800;letter-spacing:0.005em;text-transform:uppercase;color:rgba(240,243,247,0.08);white-space:nowrap">Mixed</div>
+    <div style="font-family:var(--disp);font-size:clamp(80px,11vw,190px);line-height:0.94;font-weight:800;letter-spacing:0.005em;text-transform:uppercase;color:rgba(240,243,247,0.08);white-space:nowrap">palletizing,</div>
+  </div>
+
+  <sc-if value="{{ visible }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="Cookie banner" style="position:absolute;left:24px;bottom:24px;z-index:80;width:min(340px, calc(100vw - 48px));border-radius:16px;background:var(--panel);border:1px solid rgba(240,243,247,0.14);box-shadow:0 40px 120px rgba(0,0,0,0.55);padding:20px 20px 18px;animation:cb-rise 0.9s var(--ease) both">
+    <div style="font-family:var(--disp);font-weight:800;font-size:21px;line-height:0.94;letter-spacing:0.01em;text-transform:uppercase;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent">Cookies</div>
+    <p style="margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--mut);text-wrap:pretty">We use analytics cookies to improve this site. See our <a href="#privacy" style="color:var(--body-dim);border-bottom:1px solid var(--line);transition:color 0.3s var(--ease)" style-hover="color:var(--acc)">cookies policy</a>.</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:16px">
+      <button onClick="{{ accept }}" style="flex:1;height:38px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font-family:'Switzer',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;transition:transform 0.3s var(--ease),border-color 0.3s var(--ease)" style-hover="transform:translateY(-2px);border-color:rgba(240,243,247,0.85)">Accept</button>
+      <button onClick="{{ reject }}" style="flex:1;height:38px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink);font-family:'Switzer',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer;transition:transform 0.3s var(--ease),border-color 0.3s var(--ease)" style-hover="transform:translateY(-2px);border-color:rgba(240,243,247,0.85)">Reject</button>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ decided }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:24px;bottom:24px;z-index:80;display:flex;align-items:center;gap:12px;animation:cb-rise 0.7s var(--ease) both">
+    <div style="font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--hint-ink);border:1px solid var(--line);border-radius:999px;padding:9px 16px">{{ decisionLabel }}</div>
+    <button onClick="{{ reopen }}" style="border:0;background:transparent;padding:9px 4px;font-family:'Switzer',sans-serif;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--mut2);cursor:pointer;transition:color 0.3s var(--ease)" style-hover="color:var(--acc)">Cookie settings</button>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;styleIndex&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: 0, &quot;tsType&quot;: &quot;number&quot;, &quot;options&quot;: [0, 1, 2, 3], &quot;section&quot;: &quot;Accent palette (matches site's 4 styles)&quot;}}">
+class Component extends DCLogic {
+  state = { decision: null };
+  renderVals() {
+    const styles = [
+      ['#35D0DB', '#4D5FE0'],
+      ['oklch(71% 0.19 25)', 'oklch(60% 0.22 350)'],
+      ['oklch(80% 0.15 135)', 'oklch(70% 0.14 180)'],
+      ['oklch(69% 0.24 330)', 'oklch(55% 0.22 290)'],
+    ];
+    const idx = Math.min(3, Math.max(0, this.props.styleIndex ?? 0));
+    document.body.style.setProperty('--acc', styles[idx][0]);
+    document.body.style.setProperty('--acc2', styles[idx][1]);
+    return {
+      visible: this.state.decision === null,
+      decided: this.state.decision !== null,
+      decisionLabel: this.state.decision === 'accept' ? 'Analytics on' : 'Analytics off',
+      accept: () => this.setState({ decision: 'accept' }),
+      reject: () => this.setState({ decision: 'reject' }),
+      reopen: () => this.setState({ decision: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>
