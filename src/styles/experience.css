@@ -193,11 +193,25 @@ spray-current {
   transition: all 0.5s var(--ease);
   padding: 6px 2px;
 }
+.idx {
+  user-select: none;
+  -webkit-user-select: none;
+}
 .idx-track {
   position: relative;
   width: 100%;
   height: 1px;
   background: rgba(174, 182, 203, 0.28);
+  cursor: pointer;
+}
+/* fattened invisible hit area: the 1px track is scrubbable/tappable */
+.idx-track::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: -6px;
+  bottom: -16px;
 }
 .idx-fl {
   position: absolute;

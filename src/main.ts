@@ -85,6 +85,7 @@ class FSPage {
   _svPrev = 0;
   _f1Prev = 0;
   _f2Prev = 0;
+  _f2Re: number | undefined = undefined;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -217,6 +218,9 @@ class FSPage {
     this._el.cmFill = this._el.cms.map((el: HTMLElement) => [...el.querySelectorAll('[data-fill]')]);
     this._el.cmOut = this._el.cms.map((el: HTMLElement) => [...el.querySelectorAll('[data-outline]')]);
 
+    this._initIndexScrub();
+    this._prefetchFilms();
+
     // accent re-solve: random seed per visit, pointer press anywhere cycles
     this._styleI = Math.floor(Math.random() * this.stylesDef.length);
     this._applyAccent(this._styleI, false);
@@ -332,6 +336,54 @@ class FSPage {
     getTicker().add(this._tick);
 
     bindCookieSettings();
+  }
+
+  // mobile tier (site feedback): the entrance loader is prefetch head-start —
+  // pull the films into blob URLs in scroll order (Proof first, then the tech
+  // cards) so every scene starts instantly, the way the scrubs already do.
+  // Sequential so the first-needed file gets the whole pipe; skipped for
+  // data-saver users. Desktop streams (faststart moov + preload=auto).
+  _prefetchFilms() {
+    if (!this._touch) return;
+    const conn = (navigator as any).connection;
+    if (conn && conn.saveData) return;
+    const vids = [...document.querySelectorAll<HTMLVideoElement>('video[data-src]')];
+    vids.sort((a, b) => (b.hasAttribute('data-film') ? 1 : 0) - (a.hasAttribute('data-film') ? 1 : 0));
+    const adopt = (v: HTMLVideoElement, url: string) => {
+      const t = v.currentTime,
+        playing = !v.paused && !v.ended;
+      v.src = url;
+      if (t > 0.05 || playing) {
+        v.addEventListener(
+          'loadedmetadata',
+          () => {
+            if (t > 0.05) {
+              try {
+                v.currentTime = t;
+              } catch (err) {}
+            }
+            if (playing) {
+              const p = v.play();
+              if (p && p.catch) p.catch(() => {});
+            }
+          },
+          { once: true }
+        );
+      }
+    };
+    let chain: Promise<void> = Promise.resolve();
+    vids.forEach((v) => {
+      const src = v.src;
+      chain = chain
+        .then(() =>
+          fetch(src).then((r) => {
+            if (!r.ok) throw new Error(String(r.status));
+            return r.blob();
+          })
+        )
+        .then((b) => adopt(v, URL.createObjectURL(b)))
+        .catch(() => {}); // keep streaming from the network src
+    });
   }
 
   _cycle(x: number, y: number) {
@@ -527,11 +579,8 @@ class FSPage {
           spray.nudge(W * 0.8, vh * 0.78, -850, 220, 6);
           spray.nudge(W * 0.78, vh * 0.24, -220, ((-850 * vh) / W) * 1.6, 6);
           spray.nudge(W * 0.22, vh * 0.76, 220, ((850 * vh) / W) * 1.6, 6);
-          // fresh grains ride each jet: spawned along the corner->center diagonals
-          if (spray.emit) {
-            spray.emit(W * 0.24, vh * 0.26, 0.1, 0.06, W * 0.47, vh * 0.47);
-            spray.emit(W * 0.76, vh * 0.74, 0.1, 0.06, W * 0.53, vh * 0.53);
-          }
+          // (fresh grains now come from the full-pool curtain re-seed that the
+          // Tech->About dolly drives in _update — site feedback)
         }
       }
       return;
@@ -1101,6 +1150,128 @@ class FSPage {
     }
   }
 
+  // ---- interactive index slider (site feedback): the progress track is a
+  // scrubber. Desktop: click = glide there (same _flyTo as the labels), drag =
+  // 1:1 scrub through the native escape-hatch path (external-scroll adoption —
+  // the engine treats it like the scrollbar, and the release settle reuses the
+  // standard commit rule). Touch: qualified tap = smooth-jump (mirrors anchor
+  // nav; no drag — the track is too small to fight the page gesture for).
+  _initIndexScrub() {
+    const E = this._el;
+    const track = E && E.idxFl && (E.idxFl.parentElement as HTMLElement);
+    if (!track) return;
+    let dragging = false,
+      moved = false,
+      downX = 0,
+      downY = 0,
+      downT = 0;
+    // invert _updateIndex's piecewise map: track x -> document scroll y
+    const yFor = (clientX: number): number | undefined => {
+      const G = this._idxGeo;
+      if (!G) return undefined;
+      const r = track.getBoundingClientRect();
+      const scale = r.width / Math.max(1, G.W); // --vp-fix compensation scale
+      const x = Math.min(Math.max((clientX - r.left) / scale, 0), G.W);
+      const lerp = (x0: number, x1: number, v0: number, v1: number) =>
+        v0 + (v1 - v0) * ((x - x0) / Math.max(1, x1 - x0));
+      let y;
+      if (x < G.xs[0]) y = lerp(0, G.xs[0], 0, G.b1);
+      else if (x < G.xs[1]) y = lerp(G.xs[0], G.xs[1], G.b1, G.b2);
+      else if (x < G.xs[2]) y = lerp(G.xs[1], G.xs[2], G.b2, G.b3);
+      else y = lerp(G.xs[2], G.W, G.b3, G.yEnd);
+      y -= this._vh() * 0.5; // the map is anchored at viewport center
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      return Math.max(0, Math.min(max, y));
+    };
+    // click/tap jumps snap to the nearest scene boundary — boundaries are the
+    // only rest states. Drags rest wherever the standard settle puts them.
+    const snapB = (y: number) => {
+      const root = this._tunnel;
+      if (!root) return y;
+      const vh = this._vh();
+      const top = root.getBoundingClientRect().top + window.scrollY;
+      const B = this._bounds(),
+        TOTAL = B[B.length - 1];
+      const yu = (y - top) / vh;
+      if (yu <= 0.01 || yu >= TOTAL) return y; // hero top / footer region: leave as-is
+      let best = B[0],
+        bd = Infinity;
+      B.forEach((b) => {
+        const d = Math.abs(yu - b);
+        // <= so ties snap forward: a label's marker-x maps exactly between two
+        // boundaries, and the user aimed at the label's own scene
+        if (d <= bd) {
+          bd = d;
+          best = b;
+        }
+      });
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      return Math.max(0, Math.min(max, top + best * vh));
+    };
+    track.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      downX = e.clientX;
+      downY = e.clientY;
+      downT = performance.now();
+      moved = false;
+      if (this._touch) {
+        // navigation, not a gesture: never clamp it (mirrors anchor nav)
+        this._gClampOn = false;
+        this._gRange = undefined;
+        this._assisted = true;
+        return;
+      }
+      dragging = true;
+      this._touchDown = true; // holds the settle off while the finger is down
+      try {
+        track.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    });
+    track.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!dragging) return;
+      if (!moved && Math.hypot(e.clientX - downX, e.clientY - downY) > 3) moved = true;
+      if (moved) {
+        const y = yFor(e.clientX);
+        if (y !== undefined) window.scrollTo(0, Math.round(y));
+      }
+    });
+    const up = (e: PointerEvent) => {
+      if (this._touch) {
+        if (performance.now() - downT < 400 && Math.hypot(e.clientX - downX, e.clientY - downY) < 12) {
+          const y0 = yFor(e.clientX);
+          if (y0 !== undefined) {
+            const y = snapB(y0);
+            this._fly = undefined;
+            this._assisted = true;
+            this._gClampOn = false;
+            this._gRange = undefined;
+            try {
+              window.scrollTo({ top: y, behavior: this._rm ? 'auto' : 'smooth' });
+            } catch (err) {
+              window.scrollTo(0, y);
+            }
+          }
+        }
+        return;
+      }
+      if (!dragging) return;
+      dragging = false;
+      this._touchDown = false;
+      this._lastInT = performance.now(); // release starts the standard settle clock
+      if (!moved) {
+        const y0 = yFor(e.clientX);
+        if (y0 !== undefined) {
+          const y = snapB(y0);
+          if (this._rm) window.scrollTo(0, y);
+          else this._flyTo(y);
+        }
+      }
+    };
+    track.addEventListener('pointerup', up);
+    track.addEventListener('pointercancel', up);
+  }
+
   _updateIndex(vh: number) {
     const E = this._el;
     if (!E || !E.idx) return;
@@ -1297,6 +1468,22 @@ class FSPage {
     this._f1Prev = f1;
     if (f2 > 0.02 && !(this._f2Prev > 0.02)) jets();
     this._f2Prev = f2;
+    // Tech -> About dolly refreshes the field (site feedback): a vertical spawn
+    // curtain sweeps across with the transition, re-emitting a pool fraction
+    // equal to the progress delta. Slots are overwritten oldest-first, so by
+    // the time About lands ~the whole pool has been re-seeded — old grains
+    // vanish as new ones fade in, like a fresh start. Same per-frame burst
+    // machinery that already runs, so no extra cost and no reset hitch. The
+    // per-frame cap keeps anchor fly-throughs from dumping clumps.
+    if (this._spray && this._spray.emit && f2 > 0.001 && f2 < 0.999) {
+      const df2 = Math.abs(f2 - (this._f2Re === undefined ? f2 : this._f2Re));
+      if (df2 > 0) {
+        const W = window.innerWidth;
+        const cx = W * f2;
+        this._spray.emit(cx, vh * 0.12, Math.min(df2, 0.05), 0.06, cx, vh * 0.88);
+      }
+    }
+    this._f2Re = f2;
     // deployments handshake: fire the opening jets the moment the spray surfaces,
     // so the cross-current reads as part of the reveal transition (not after it)
     if (sprayVis > 0.35 && !(this._svPrev > 0.35) && d > 0.2) jets();
