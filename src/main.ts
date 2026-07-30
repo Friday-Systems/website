@@ -85,6 +85,7 @@ class FSPage {
   _svPrev = 0;
   _f1Prev = 0;
   _f2Armed = true;
+  _f2JetsArmed = true;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -1480,26 +1481,33 @@ class FSPage {
     };
     if (f1 > 0.02 && !(this._f1Prev > 0.02)) jets();
     this._f1Prev = f1;
-    // Tech -> About refresh (site feedback): the WHOLE pool re-spawns
-    // distributed across the page — five full-width bands, 20% of the pool
-    // each, queued over five consecutive frames (~80ms; the burst shader
-    // already touches every particle every frame, so this costs nothing
-    // extra and there is no reset hitch) — stirred by EXACTLY the
-    // deployments-reveal handshake: the same opposed cross-current pair.
-    // It fires as the About scene LANDS (f2 > 0.98), not at ignition —
-    // earlier the tech frame still covers the spray, so the handshake
-    // played unseen and had decayed by the time the field was exposed.
-    // Armed only after f2 returns below 0.02, so scrubbing back and forth
-    // doesn't strobe the field.
-    if (f2 < 0.02) this._f2Armed = true;
-    else if (this._f2Armed && f2 > 0.98 && this._spray && this._spray.emit) {
-      this._f2Armed = false;
-      const W = window.innerWidth;
-      for (let k = 0; k < 5; k++) {
-        const by = vh * (0.1 + 0.2 * k);
-        this._spray.emit(W * 0.06, by, 0.2, 0.11, W * 0.94, by);
+    // Tech -> About refresh (site feedback), staged in two beats:
+    // 1) ~30% into the dolly the WHOLE pool re-spawns distributed across the
+    //    page — five full-width bands, 20% each, queued over five frames
+    //    (~80ms; the burst path already touches every particle every frame,
+    //    so no extra cost, no reset hitch). This happens behind the tech
+    //    frame, so the fresh field is already in place when it dissolves.
+    // 2) As the About statement SETTLES (f2 > 0.98, field fully exposed),
+    //    EXACTLY the deployments-reveal handshake fires: the same opposed
+    //    cross-current pair — where it's actually seen.
+    // Both re-arm only after f2 returns below 0.02, so scrubbing back and
+    // forth doesn't strobe the field.
+    if (f2 < 0.02) {
+      this._f2Armed = true;
+      this._f2JetsArmed = true;
+    } else {
+      if (this._f2Armed && f2 > 0.3 && this._spray && this._spray.emit) {
+        this._f2Armed = false;
+        const W = window.innerWidth;
+        for (let k = 0; k < 5; k++) {
+          const by = vh * (0.1 + 0.2 * k);
+          this._spray.emit(W * 0.06, by, 0.2, 0.11, W * 0.94, by);
+        }
       }
-      jets(); // the handshake of the background
+      if (this._f2JetsArmed && f2 > 0.98 && this._spray) {
+        this._f2JetsArmed = false;
+        jets(); // the handshake of the background
+      }
     }
     // deployments handshake: fire the opening jets the moment the spray surfaces,
     // so the cross-current reads as part of the reveal transition (not after it)
