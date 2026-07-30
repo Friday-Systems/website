@@ -86,6 +86,7 @@ class FSPage {
   _f1Prev = 0;
   _f2Armed = true;
   _f2JetsArmed = true;
+  _f2Jets2Armed = true;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -1487,14 +1488,17 @@ class FSPage {
     //    (~80ms; the burst path already touches every particle every frame,
     //    so no extra cost, no reset hitch). This happens behind the tech
     //    frame, so the fresh field is already in place when it dissolves.
-    // 2) As the About statement SETTLES (f2 > 0.98, field fully exposed),
-    //    EXACTLY the deployments-reveal handshake fires: the same opposed
-    //    cross-current pair — where it's actually seen.
-    // Both re-arm only after f2 returns below 0.02, so scrubbing back and
-    // forth doesn't strobe the field.
+    // 2) The handshake cross-current fires TWICE, mirroring the deployments
+    //    reveal exactly (there, reset()'s internal opening jets hit the fresh
+    //    field first and the page's surface handshake reinforces them — the
+    //    doubled impulse is why that one reads stronger): first pair at 85%
+    //    of the dolly, reinforcing pair as the About statement settles.
+    // All beats re-arm only after f2 returns below 0.02, so scrubbing back
+    // and forth doesn't strobe the field.
     if (f2 < 0.02) {
       this._f2Armed = true;
       this._f2JetsArmed = true;
+      this._f2Jets2Armed = true;
     } else {
       if (this._f2Armed && f2 > 0.3 && this._spray && this._spray.emit) {
         this._f2Armed = false;
@@ -1504,9 +1508,13 @@ class FSPage {
           this._spray.emit(W * 0.06, by, 0.2, 0.11, W * 0.94, by);
         }
       }
-      if (this._f2JetsArmed && f2 > 0.98 && this._spray) {
+      if (this._f2JetsArmed && f2 > 0.85 && this._spray) {
         this._f2JetsArmed = false;
-        jets(); // the handshake of the background
+        jets(); // first tap of the handshake
+      }
+      if (this._f2Jets2Armed && f2 > 0.98 && this._spray) {
+        this._f2Jets2Armed = false;
+        jets(); // reinforcing tap as the statement settles
       }
     }
     // deployments handshake: fire the opening jets the moment the spray surfaces,
