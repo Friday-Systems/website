@@ -1513,7 +1513,7 @@ class FSPage {
     //    (~80ms; the burst path already touches every particle every frame,
     //    so no extra cost, no reset hitch). This happens behind the tech
     //    frame, so the fresh field is already in place when it dissolves.
-    // 2) At 85% of the dolly a single GUST delivers the handshake energy
+    // 2) At 70% of the dolly a single GUST delivers the handshake energy
     //    (~2.4 taps' worth) through a soft sin² attack/release envelope over
     //    ~0.8s (stepped pre-gate in _stepGust). Deployments reads fluid
     //    because its jet onsets are masked by the fade-in; on the exposed
@@ -1533,7 +1533,7 @@ class FSPage {
           this._spray.emit(W * 0.06, by, 0.2, 0.11, W * 0.94, by);
         }
       }
-      if (this._f2JetsArmed && f2 > 0.85 && this._spray) {
+      if (this._f2JetsArmed && f2 > 0.7 && this._spray) {
         this._f2JetsArmed = false;
         const now = performance.now();
         this._gust = { t0: now, last: now };
