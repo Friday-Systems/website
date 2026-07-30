@@ -86,7 +86,7 @@ class FSPage {
   _f1Prev = 0;
   _f2Armed = true;
   _f2JetsArmed = true;
-  _f2Jets2Armed = true;
+  _gust: { t0: number; last: number } | null = null;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -1340,6 +1340,30 @@ class FSPage {
     E.idxFl.style.transform = 'scaleX(' + (this._idxX / G.W).toFixed(4) + ')';
   }
 
+  // the Tech->About handshake gust: the deployments cross-current pair, its
+  // ~2.4-tap impulse spread over an 800ms sin² attack/release envelope so the
+  // current swells instead of kicking. Stepped every ticker frame BEFORE the
+  // idle gate — it must keep flowing after the scroll settles at About.
+  _stepGust(vh: number) {
+    const g = this._gust;
+    if (!g) return;
+    if (!this._spray || !this._spray.nudge) return;
+    const DUR = 800,
+      TOTAL = 2.4; // impulse, in units of one handshake tap
+    const now = performance.now();
+    const p = (now - g.t0) / DUR;
+    const dt = Math.min(now - g.last, 50);
+    g.last = now;
+    if (p >= 1) {
+      this._gust = null;
+      return;
+    }
+    const s = ((2 * TOTAL) / DUR) * Math.pow(Math.sin(Math.PI * Math.max(p, 0)), 2) * dt;
+    const W = window.innerWidth;
+    this._spray.nudge(W * 0.25, vh * 0.5, 600 * s, 150 * s, 4);
+    this._spray.nudge(W * 0.75, vh * 0.55, -500 * s, -120 * s, 4);
+  }
+
   // riser type: fit each [data-abfit] line edge-to-edge; data-fit-group lines share the smaller size
   _fitAbout() {
     // batched: write all probe sizes, read all measurements, then write final sizes (no layout thrash)
@@ -1406,6 +1430,7 @@ class FSPage {
     } // seed scrub with this visit's random accent; prefetch the rest once idle
     if (!this._spSynced) this._syncSpray(this._styleI); // spray mounts async too; same shared index
     this._updateIndex(vh);
+    this._stepGust(vh);
     const root = this._tunnel;
     if (!root) return;
     // idle gate: everything below is a pure function of (scroll, viewport); once the
@@ -1488,17 +1513,17 @@ class FSPage {
     //    (~80ms; the burst path already touches every particle every frame,
     //    so no extra cost, no reset hitch). This happens behind the tech
     //    frame, so the fresh field is already in place when it dissolves.
-    // 2) The handshake cross-current fires TWICE, mirroring the deployments
-    //    reveal exactly (there, reset()'s internal opening jets hit the fresh
-    //    field first and the page's surface handshake reinforces them — the
-    //    doubled impulse is why that one reads stronger): first pair at 85%
-    //    of the dolly, reinforcing pair as the About statement settles.
-    // All beats re-arm only after f2 returns below 0.02, so scrubbing back
+    // 2) At 85% of the dolly a single GUST delivers the handshake energy
+    //    (~2.4 taps' worth) through a soft sin² attack/release envelope over
+    //    ~0.8s (stepped pre-gate in _stepGust). Deployments reads fluid
+    //    because its jet onsets are masked by the fade-in; on the exposed
+    //    field, discrete taps read as visible kicks — the swelling gust has
+    //    no onset to see.
+    // Both beats re-arm only after f2 returns below 0.02, so scrubbing back
     // and forth doesn't strobe the field.
     if (f2 < 0.02) {
       this._f2Armed = true;
       this._f2JetsArmed = true;
-      this._f2Jets2Armed = true;
     } else {
       if (this._f2Armed && f2 > 0.3 && this._spray && this._spray.emit) {
         this._f2Armed = false;
@@ -1510,11 +1535,8 @@ class FSPage {
       }
       if (this._f2JetsArmed && f2 > 0.85 && this._spray) {
         this._f2JetsArmed = false;
-        jets(); // first tap of the handshake
-      }
-      if (this._f2Jets2Armed && f2 > 0.98 && this._spray) {
-        this._f2Jets2Armed = false;
-        jets(); // reinforcing tap as the statement settles
+        const now = performance.now();
+        this._gust = { t0: now, last: now };
       }
     }
     // deployments handshake: fire the opening jets the moment the spray surfaces,
