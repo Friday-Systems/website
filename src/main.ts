@@ -84,7 +84,6 @@ class FSPage {
   _scenePainted: number | undefined = undefined;
   _svPrev = 0;
   _f1Prev = 0;
-  _f2Prev = 0;
   _f2Armed = true;
   _abTop: number | undefined = undefined;
   _abW = -1;
@@ -569,19 +568,9 @@ class FSPage {
         spray.setObstacles([]);
         this._obsOn = false;
         this._obsPrev = null;
-        // exit refill: jets stir the grains back across the space the cards held
-        if (stTech && stTech.past >= 0.01 && spray.nudge) {
-          const W = window.innerWidth,
-            vh = window.innerHeight;
-          // pinwheel: 4 corner jets, each aimed just off-center so they shear past
-          // one another and spin up a central vortex (head-on jets cancel, no mixing)
-          spray.nudge(W * 0.2, vh * 0.22, 850, -220, 6);
-          spray.nudge(W * 0.8, vh * 0.78, -850, 220, 6);
-          spray.nudge(W * 0.78, vh * 0.24, -220, ((-850 * vh) / W) * 1.6, 6);
-          spray.nudge(W * 0.22, vh * 0.76, 220, ((850 * vh) / W) * 1.6, 6);
-          // (fresh grains now come from the full-field respawn the Tech->About
-          // dolly triggers in _update — site feedback)
-        }
+        // (the Tech->About exit effect is the full-field respawn + handshake
+        // cross-current that _update drives — site feedback; the old corner
+        // pinwheel is retired)
       }
       return;
     }
@@ -1491,16 +1480,15 @@ class FSPage {
     };
     if (f1 > 0.02 && !(this._f1Prev > 0.02)) jets();
     this._f1Prev = f1;
-    if (f2 > 0.02 && !(this._f2Prev > 0.02)) jets();
-    this._f2Prev = f2;
     // Tech -> About dolly refreshes the field (site feedback): the WHOLE pool
     // re-spawns distributed across the page — five full-width bands, 20% of
-    // the pool each, queued over five consecutive frames (~80ms). The burst
+    // the pool each, queued over five consecutive frames (~80ms; the burst
     // shader already touches every particle every frame, so this costs
-    // nothing extra and there is no reset hitch; the handshake cross-current
-    // jets fired at f2 ignition (above) stir the fresh field. Armed only
-    // after f2 returns below 0.02, so scrubbing back and forth doesn't
-    // strobe the field.
+    // nothing extra and there is no reset hitch) — stirred by EXACTLY the
+    // deployments-reveal handshake: the same opposed cross-current pair,
+    // fired together with the respawn (the old ignition jet and the corner
+    // pinwheel are retired). Armed only after f2 returns below 0.02, so
+    // scrubbing back and forth doesn't strobe the field.
     if (f2 < 0.02) this._f2Armed = true;
     else if (this._f2Armed && f2 > 0.12 && this._spray && this._spray.emit) {
       this._f2Armed = false;
@@ -1509,6 +1497,7 @@ class FSPage {
         const by = vh * (0.1 + 0.2 * k);
         this._spray.emit(W * 0.06, by, 0.2, 0.11, W * 0.94, by);
       }
+      jets(); // the handshake of the background
     }
     // deployments handshake: fire the opening jets the moment the spray surfaces,
     // so the cross-current reads as part of the reveal transition (not after it)
