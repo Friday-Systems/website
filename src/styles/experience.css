@@ -203,6 +203,7 @@ spray-current {
   height: 1px;
   background: rgba(174, 182, 203, 0.28);
   cursor: pointer;
+  touch-action: none; /* the track owns its touch gesture: drag scrubs, page never pans */
 }
 /* fattened invisible hit area: the 1px track is scrubbable/tappable */
 .idx-track::before {
