@@ -1480,17 +1480,19 @@ class FSPage {
     };
     if (f1 > 0.02 && !(this._f1Prev > 0.02)) jets();
     this._f1Prev = f1;
-    // Tech -> About dolly refreshes the field (site feedback): the WHOLE pool
-    // re-spawns distributed across the page — five full-width bands, 20% of
-    // the pool each, queued over five consecutive frames (~80ms; the burst
-    // shader already touches every particle every frame, so this costs
-    // nothing extra and there is no reset hitch) — stirred by EXACTLY the
-    // deployments-reveal handshake: the same opposed cross-current pair,
-    // fired together with the respawn (the old ignition jet and the corner
-    // pinwheel are retired). Armed only after f2 returns below 0.02, so
-    // scrubbing back and forth doesn't strobe the field.
+    // Tech -> About refresh (site feedback): the WHOLE pool re-spawns
+    // distributed across the page — five full-width bands, 20% of the pool
+    // each, queued over five consecutive frames (~80ms; the burst shader
+    // already touches every particle every frame, so this costs nothing
+    // extra and there is no reset hitch) — stirred by EXACTLY the
+    // deployments-reveal handshake: the same opposed cross-current pair.
+    // It fires as the About scene LANDS (f2 > 0.98), not at ignition —
+    // earlier the tech frame still covers the spray, so the handshake
+    // played unseen and had decayed by the time the field was exposed.
+    // Armed only after f2 returns below 0.02, so scrubbing back and forth
+    // doesn't strobe the field.
     if (f2 < 0.02) this._f2Armed = true;
-    else if (this._f2Armed && f2 > 0.12 && this._spray && this._spray.emit) {
+    else if (this._f2Armed && f2 > 0.98 && this._spray && this._spray.emit) {
       this._f2Armed = false;
       const W = window.innerWidth;
       for (let k = 0; k < 5; k++) {
