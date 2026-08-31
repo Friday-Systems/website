@@ -62,6 +62,10 @@ jobs:
             ":s3,provider=Cloudflare,access_key_id=$R2_ACCESS_KEY_ID,secret_access_key=$R2_SECRET_ACCESS_KEY,endpoint=https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com:$R2_BUCKET/assets/" \
             --include "videos/**" --include "scrubs/**" --checksum --fast-list --stats-one-line
       - run: npm run build
+      # the bundle name embeds a content hash (and the media ?v= manifest), so
+      # it doubles as the freshness sentinel for the purge-cdn job below
+      - id: bundle
+        run: echo "name=$(basename dist/assets/main-*.js)" >> "$GITHUB_OUTPUT"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -73,6 +77,39 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # Bunny caches media for a year, but GitHub Pages' own CDN can keep serving
+  # stale bytes for a few minutes after a deploy reports success — a pull
+  # during that window would poison the new ?v= cache keys with old content
+  # for a year. So: wait until Pages provably serves THIS deploy (the freshly
+  # hashed JS bundle answers 200), give the edge a grace period, then purge
+  # the Bunny pull zone (id 6447211 = friday-media). Purged entries refill on
+  # demand. Skipped until the BUNNY_API_KEY repo secret exists.
+  purge-cdn:
+    needs: [build, deploy]
+    if: vars.MEDIA_BASE != ''
+    runs-on: ubuntu-latest
+    env:
+      BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+    steps:
+      - name: Wait for Pages freshness, then purge Bunny cache
+        if: env.BUNNY_API_KEY != ''
+        run: |
+          base="${{ needs.deploy.outputs.page_url }}"
+          url="${base%/}/assets/${{ needs.build.outputs.bundle }}"
+          code=""
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$url?cb=$i-$RANDOM")
+            [ "$code" = "200" ] && break
+            sleep 15
+          done
+          [ "$code" = "200" ] || { echo "Pages never served $url (last code $code)"; exit 1; }
+          sleep 30  # grace for global edge propagation
+          curl -sf -X POST "https://api.bunny.net/pullzone/6447211/purgeCache" \
+            -H "AccessKey: $BUNNY_API_KEY" -H "content-type: application/json"
+          echo "Bunny cache purged."
