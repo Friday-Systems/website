@@ -110,6 +110,9 @@ jobs:
           done
           [ "$code" = "200" ] || { echo "Pages never served $url (last code $code)"; exit 1; }
           sleep 30  # grace for global edge propagation
-          curl -sf -X POST "https://api.bunny.net/pullzone/6447211/purgeCache" \
-            -H "AccessKey: $BUNNY_API_KEY" -H "content-type: application/json"
-          echo "Bunny cache purged."
+          http=$(curl -s -o /tmp/purge-body -w '%{http_code}' -X POST \
+            "https://api.bunny.net/pullzone/6447211/purgeCache" \
+            -H "AccessKey: $BUNNY_API_KEY" -H "content-type: application/json")
+          echo "purge response: HTTP $http"
+          cat /tmp/purge-body || true
+          case "$http" in 200|204) echo "Bunny cache purged." ;; *) exit 1 ;; esac
