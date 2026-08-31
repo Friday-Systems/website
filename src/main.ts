@@ -24,6 +24,20 @@ type PalletEl = HTMLElement & { paused: boolean };
 const SCRUB_BASE = 'assets/scrubs/';
 const SCRUB_BASE_TOUCH = 'assets/scrubs/mobile/'; // shorter mobile encodes (seek granularity)
 
+// Media CDN indirection (vite.config.ts `define`): __MEDIA_BASE__ prefixes
+// every video URL (''/same-origin in dev and until the CDN is configured);
+// __MEDIA_VERS__ maps repo path -> content hash for a ?v= cache-buster, so the
+// CDN can serve immutable/year-long cache lifetimes and a replaced file still
+// reaches every visitor on their next load.
+declare const __MEDIA_BASE__: string | undefined;
+declare const __MEDIA_VERS__: Record<string, string> | undefined;
+const MEDIA_BASE = typeof __MEDIA_BASE__ !== 'undefined' ? __MEDIA_BASE__ : ''; // dev: same-origin
+const MEDIA_VERS: Record<string, string> = typeof __MEDIA_VERS__ !== 'undefined' ? __MEDIA_VERS__ : {};
+const mediaUrl = (p: string) => {
+  const v = MEDIA_VERS[p];
+  return MEDIA_BASE + p + (v ? '?v=' + v : '');
+};
+
 // Touch grammar tuning knobs (exposed as props on the mobile DC; final values)
 const HOLD_DELAY = 280; // ms — stationary hold starts the pour
 const STIR_STRENGTH = 10; // scroll-drag stir gain into the spray field
@@ -63,6 +77,7 @@ class FSPage {
   _qSm: number | undefined = undefined;
   _qAnim = false;
   _feat = 0;
+  _techNear = false; // card films stay cold (preload=none) until promoted
   _obsAnimUntil = 0;
   _obsOn = false;
   _obsPrev: any = null;
@@ -145,9 +160,12 @@ class FSPage {
     this._techEl = document.getElementById('technology');
     this._rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // device-tier media: touch gets the ~720p encodes
+    // device-tier media: touch gets the ~720p encodes. Posters (webp first
+    // frames) make sure a scene is never black while its film buffers.
     document.querySelectorAll<HTMLVideoElement>('video[data-src]').forEach((v) => {
-      v.src = (this._touch && v.dataset.srcTouch) || v.dataset.src!;
+      v.src = mediaUrl((this._touch && v.dataset.srcTouch) || v.dataset.src!);
+      const po = (this._touch && v.dataset.posterTouch) || v.dataset.poster;
+      if (po) v.poster = po;
     });
     if (this._touch) {
       const pw = document.querySelector('.pallet-mount');
@@ -220,7 +238,21 @@ class FSPage {
     this._el.cmOut = this._el.cms.map((el: HTMLElement) => [...el.querySelectorAll('[data-outline]')]);
 
     this._initIndexScrub();
-    this._prefetchFilms();
+    // card films promote when Proof is buffered — or sooner if the visitor
+    // heads for the Technology scene (1.6 viewports of lead)
+    this._afterProofReady(() => this._promoteCards());
+    if (this._techEl) {
+      const pio = new IntersectionObserver(
+        (es) => {
+          if (es.some((e) => e.isIntersecting)) {
+            pio.disconnect();
+            this._promoteCards();
+          }
+        },
+        { rootMargin: '160% 0px' }
+      );
+      pio.observe(this._techEl);
+    }
 
     // accent re-solve: random seed per visit, pointer press anywhere cycles
     this._styleI = Math.floor(Math.random() * this.stylesDef.length);
@@ -286,7 +318,7 @@ class FSPage {
       v.muted = true;
       if (this._rm) {
         v.autoplay = false;
-        v.preload = 'auto';
+        v.preload = 'metadata'; // poster is the static frame; skip buffering the file
         v.pause();
       }
     };
@@ -303,7 +335,7 @@ class FSPage {
                 v.pause();
               } else {
                 const c = v.closest('[data-card]');
-                if (c && !this._rm && +c.getAttribute('data-card')! === (this._feat || 0)) {
+                if (c && !this._rm && this._techNear && +c.getAttribute('data-card')! === (this._feat || 0)) {
                   const p = v.play();
                   if (p && p.catch) p.catch(() => {});
                 }
@@ -339,52 +371,61 @@ class FSPage {
     bindCookieSettings();
   }
 
-  // mobile tier (site feedback): the entrance loader is prefetch head-start —
-  // pull the films into blob URLs in scroll order (Proof first, then the tech
-  // cards) so every scene starts instantly, the way the scrubs already do.
-  // Sequential so the first-needed file gets the whole pipe; skipped for
-  // data-saver users. Desktop streams (faststart moov + preload=auto).
-  _prefetchFilms() {
-    if (!this._touch) return;
-    const conn = (navigator as any).connection;
-    if (conn && conn.saveData) return;
-    const vids = [...document.querySelectorAll<HTMLVideoElement>('video[data-src]')];
-    vids.sort((a, b) => (b.hasAttribute('data-film') ? 1 : 0) - (a.hasAttribute('data-film') ? 1 : 0));
-    const adopt = (v: HTMLVideoElement, url: string) => {
-      const t = v.currentTime,
-        playing = !v.paused && !v.ended;
-      v.src = url;
-      if (t > 0.05 || playing) {
-        v.addEventListener(
-          'loadedmetadata',
-          () => {
-            if (t > 0.05) {
-              try {
-                v.currentTime = t;
-              } catch (err) {}
-            }
-            if (playing) {
-              const p = v.play();
-              if (p && p.catch) p.catch(() => {});
-            }
-          },
-          { once: true }
-        );
-      }
+  // Staged media pipeline. Everything streams progressively (faststart moov);
+  // the pipe is prioritized instead of contested: the Proof film (first video
+  // scene) preloads alone from boot, the tech-card films sit at preload=none
+  // until either (a) Proof has buffered through, or (b) the visitor nears the
+  // Technology scene — whichever first. Cards then promote sequentially so the
+  // first-needed file always gets the whole pipe. On touch only the featured
+  // card buffers fully (one active decoder); the rest stop at metadata until
+  // tapped, when play() pulls them. Remaining accent scrubs prefetch last.
+  _afterProofReady(cb: () => void, maxWait = 20000) {
+    const film = this._el && (this._el.film as HTMLVideoElement | null);
+    if (!film || film.readyState >= 4) return void cb();
+    let fired = false;
+    const go = () => {
+      if (fired) return;
+      fired = true;
+      film.removeEventListener('canplaythrough', go);
+      cb();
     };
-    let chain: Promise<void> = Promise.resolve();
-    vids.forEach((v) => {
-      const src = v.src;
-      chain = chain
-        .then(() =>
-          fetch(src).then((r) => {
-            if (!r.ok) throw new Error(String(r.status));
-            return r.blob();
-          })
-        )
-        .then((b) => adopt(v, URL.createObjectURL(b)))
-        .catch(() => {}); // keep streaming from the network src
+    film.addEventListener('canplaythrough', go);
+    setTimeout(go, maxWait);
+  }
+  _promoteCards() {
+    if (this._techNear) return;
+    this._techNear = true;
+    const vids = [...document.querySelectorAll<HTMLVideoElement>('video[data-cfilm]')];
+    // featured card first, then the rest in card order
+    vids.sort((a, b) => {
+      const ci = (v: HTMLVideoElement) => +(v.closest('[data-card]')?.getAttribute('data-card') || 0);
+      const f = this._feat || 0;
+      return (ci(a) === f ? -1 : ci(a)) - (ci(b) === f ? -1 : ci(b));
     });
+    const conn = (navigator as any).connection;
+    const lite = this._touch || (conn && conn.saveData); // phones: featured buffers, others stop at metadata
+    let i = 0;
+    const next = () => {
+      if (this._dead) return;
+      if (i >= vids.length) return this._prefetchScrubs(); // scrubs ride last in the queue
+      const v = vids[i++];
+      const full = !lite || i === 1;
+      v.preload = full ? 'auto' : 'metadata';
+      if (v.readyState === 0) v.load();
+      if (full && v.readyState < 4) {
+        let fired = false;
+        const go = () => {
+          if (fired) return;
+          fired = true;
+          v.removeEventListener('canplaythrough', go);
+          next();
+        };
+        v.addEventListener('canplaythrough', go);
+        setTimeout(go, 15000);
+      } else next();
+    };
+    next();
+    this._setFeatured(this._feat || 0); // re-run play gating now that cards may roll
   }
 
   _cycle(x: number, y: number) {
@@ -404,7 +445,7 @@ class FSPage {
     if (!this._scrubBlobs) this._scrubBlobs = {};
     if (!this._scrubBlobs[file]) {
       const get = (base: string) =>
-        fetch(base + file).then((r) => {
+        fetch(mediaUrl(base + file)).then((r) => {
           if (!r.ok) throw new Error(String(r.status));
           return r.blob();
         });
@@ -539,7 +580,7 @@ class FSPage {
       const v = c.querySelector('[data-cfilm]') as HTMLVideoElement | null;
       if (v) {
         v.style.filter = 'var(--film-base) brightness(' + (on ? 0.92 : 0.5) + ')';
-        if (on && !this._rm) {
+        if (on && !this._rm && this._techNear) {
           const p = v.play();
           if (p && p.catch) p.catch(() => {});
         } else v.pause();
@@ -706,6 +747,13 @@ class FSPage {
     const hold = 240,
       dollyDur = 850,
       fadeDur = 800;
+    // readiness gate: don't reveal the site until the Proof film can actually
+    // play (readyState >= HAVE_FUTURE_DATA) — capped at 2.6s of extra hold so
+    // a dead connection can never trap the visitor behind the loader
+    const gateFilm = document.querySelector('[data-film]') as HTMLVideoElement | null;
+    const gateCap = total + hold + dollyDur + 2600;
+    const gateOk = (t: number) => !gateFilm || gateFilm.readyState >= 3 || t > gateCap;
+    let fadeT0: number | null = null;
     const cover = (Math.hypot(window.innerWidth, window.innerHeight) / 112) * 1.15;
     const S = this._touch ? 0.72 : 1; // touch loader rests smaller; the dolly expands from S up to cover
     const y0 = -(window.innerHeight / 2 + 160);
@@ -746,7 +794,14 @@ class FSPage {
         lockAll();
         fill.style.opacity = '1';
         grid.style.transform = 'scale(' + cover.toFixed(3) + ')';
-        const f = easeIO(Math.min(1, (t - total - hold - dollyDur) / fadeDur));
+        if (fadeT0 === null) {
+          if (!gateOk(t)) {
+            requestAnimationFrame(tick);
+            return;
+          } // hold at full cover until the film is ready
+          fadeT0 = t;
+        }
+        const f = easeIO(Math.min(1, (t - fadeT0) / fadeDur));
         ov.style.opacity = (1 - f).toFixed(3);
         if (f >= 1) return done();
       }
@@ -1425,9 +1480,8 @@ class FSPage {
       if (this._el.exp) {
         this._scrubSynced = true;
         this._syncScrub();
-        setTimeout(() => this._prefetchScrubs(), 4000);
       }
-    } // seed scrub with this visit's random accent; prefetch the rest once idle
+    } // seed scrub with this visit's random accent; the other accents prefetch at the tail of _promoteCards
     if (!this._spSynced) this._syncSpray(this._styleI); // spray mounts async too; same shared index
     this._updateIndex(vh);
     this._stepGust(vh);

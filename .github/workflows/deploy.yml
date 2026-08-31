@@ -7,6 +7,17 @@
 #
 # dist/ keeps the same /assets/... paths as the current deployment, so the
 # existing video URLs (referenced by the design_handoff prototypes) stay live.
+#
+# Media CDN (optional but recommended — GitHub Pages caps bandwidth and pins
+# cache-control to 600s): the sync step mirrors assets/videos + assets/scrubs
+# to a Cloudflare R2 bucket, and MEDIA_BASE makes the built site load videos
+# from there with a content-hash ?v= cache-buster. One-time setup:
+#   repo secrets:   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+#   repo variable:  MEDIA_BASE  (e.g. https://media.friday-systems.com/)
+# Until those exist, both the sync and the rewrite are skipped and the site
+# serves media same-origin from Pages, exactly as before. Changing a video
+# needs no extra step: replace the file in assets/, commit, push — CI syncs
+# the bucket and the new hash busts every cache.
 
 name: Deploy to GitHub Pages
 
@@ -27,6 +38,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      # only rewrite media URLs when the sync above can actually run
+      MEDIA_BASE: ${{ secrets.R2_ACCOUNT_ID != '' && vars.MEDIA_BASE || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,6 +52,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Sync media to R2
+        if: env.R2_ACCOUNT_ID != ''
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q rclone
+          rclone sync assets/ \
+            ":s3,provider=Cloudflare,access_key_id=$R2_ACCESS_KEY_ID,secret_access_key=$R2_SECRET_ACCESS_KEY,endpoint=https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com:$R2_BUCKET/assets/" \
+            --include "videos/**" --include "scrubs/**" --checksum --fast-list --stats-one-line
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
