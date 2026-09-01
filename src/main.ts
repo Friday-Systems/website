@@ -192,7 +192,7 @@ class FSPage {
           ab = document.getElementById('about');
         if (so) so.style.top = pct(B[1]);
         if (te) te.style.top = pct(B[7]); // same boundary index as desktop's 8/11
-        if (ab) ab.style.top = pct(B[8]); // desktop's 9/11
+        if (ab) ab.style.top = pct(B[9]); // desktop's 10/11
       }
     }
     this._playEntry();
