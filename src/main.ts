@@ -102,6 +102,9 @@ class FSPage {
   _f2Armed = true;
   _f2JetsArmed = true;
   _gust: { t0: number; last: number } | null = null;
+  _mailBurstArmed = true;
+  _mailBurstTimers: number[] = [];
+  _mailObsOn = false;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -643,6 +646,61 @@ class FSPage {
     });
     spray.setObstacles(list);
     this._obsOn = true;
+  }
+
+  // Contact-email "button burst" (scene 3 beat): an invisible pill-shaped
+  // obstacle wraps the mail link so the sim itself keeps every grain off the
+  // text (anything spawning inside is projected out to the rim), one burst of
+  // fresh grains blooms along the pill's sides and ends with a soft outward
+  // breath, and the pill dissolves once the burst has settled (~2.8s).
+  _fireMailBurst() {
+    const spray = this._spray;
+    const giant = this._el && this._el.abgiant;
+    const mail = giant && giant.querySelector('.mail');
+    if (!spray || !spray.emit || !spray.nudge || !spray.setObstacles || !mail) return;
+    if (this._obsOn) return; // tech cards own the obstacle slots — skip the beat
+    const r = mail.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const padX = 18,
+      padY = 10;
+    const rect = { left: r.left - padX, top: r.top - padY, width: r.width + padX * 2, height: r.height + padY * 2 };
+    spray.setObstacles([{ ...rect, radius: rect.height / 2 }]);
+    this._mailObsOn = true;
+    const cy = r.top + r.height / 2;
+    const yT = rect.top - 4,
+      yB = rect.top + rect.height + 4;
+    const T = this._mailBurstTimers;
+    spray.emit(rect.left + 8, yT, 0.035, 0.012, rect.left + rect.width - 8, yT);
+    T.push(window.setTimeout(() => spray.emit!(rect.left + 8, yB, 0.035, 0.012, rect.left + rect.width - 8, yB), 30));
+    T.push(
+      window.setTimeout(() => {
+        spray.emit!(rect.left - 6, cy, 0.012, 0.02);
+        spray.emit!(rect.left + rect.width + 6, cy, 0.012, 0.02);
+      }, 60)
+    );
+    T.push(
+      window.setTimeout(() => {
+        for (const p of [0.25, 0.5, 0.75]) {
+          const x = rect.left + rect.width * p;
+          spray.nudge!(x, yT, 0, 80, 1.2); // sim +fy = up on screen
+          spray.nudge!(x, yB, 0, -80, 1.2);
+        }
+        spray.nudge!(rect.left - 10, cy, -100, 0, 1);
+        spray.nudge!(rect.left + rect.width + 10, cy, 100, 0, 1);
+      }, 180)
+    );
+    T.push(window.setTimeout(() => this._cancelMailBurst(), 2800));
+  }
+
+  // drop the pill + any pending beat steps (also the natural end-of-beat cleanup)
+  _cancelMailBurst() {
+    for (const t of this._mailBurstTimers) clearTimeout(t);
+    this._mailBurstTimers.length = 0;
+    if (this._mailObsOn) {
+      this._mailObsOn = false;
+      // never clobber the tech cards' obstacles if they've retaken the slots
+      if (!this._obsOn && this._spray && this._spray.setObstacles) this._spray.setObstacles([]);
+    }
   }
 
   _initCards() {
@@ -1660,6 +1718,20 @@ class FSPage {
             }
           }
         } else this._abTop = undefined;
+      }
+      // Contact-email announce ("button burst"): 1s after the riser lands, an
+      // invisible button wraps the mail link and one burst of fresh grains
+      // blooms from its sides. Armed like the f2 beats — fires once per
+      // landing, re-arms only once the riser has dropped well away, and
+      // cancels mid-beat if the visitor scrubs off the landing.
+      if (rp >= 0.999) {
+        if (this._mailBurstArmed && !this._rm) {
+          this._mailBurstArmed = false;
+          this._mailBurstTimers.push(window.setTimeout(() => this._fireMailBurst(), 1000));
+        }
+      } else {
+        if (!this._mailBurstArmed) this._cancelMailBurst();
+        if (rp < 0.15) this._mailBurstArmed = true;
       }
       const msg = E.abmsg;
       if (msg) {
