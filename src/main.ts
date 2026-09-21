@@ -105,6 +105,7 @@ class FSPage {
   _mailBurstArmed = true;
   _mailBurstTimers: number[] = [];
   _mailObsOn = false;
+  _mailPrev: { cy: number; t: number } | null = null;
   _abTop: number | undefined = undefined;
   _abW = -1;
   _abH = -1;
@@ -648,25 +649,75 @@ class FSPage {
     this._obsOn = true;
   }
 
-  // Contact-email "button burst" (scene 3 beat): an invisible pill-shaped
-  // obstacle wraps the mail link so the sim itself keeps every grain off the
-  // text (anything spawning inside is projected out to the rim), one burst of
-  // fresh grains blooms along the pill's sides and ends with a soft outward
-  // breath, and the pill dissolves once the burst has settled (~2.8s).
+  // Contact-email pill: an invisible pill-shaped obstacle wraps the mail link
+  // so the sim itself keeps every grain off the text (anything spawning inside
+  // is projected out to the rim). The pill hugs the rendered type: the touch
+  // tap-target padding is stripped and the pads scale with the font size
+  // (which already tracks the viewport via its clamp()), so phones get a
+  // proportionally smaller pill — 20px desktop type keeps the classic 18/10px.
+  _mailPillRect() {
+    const giant = this._el && this._el.abgiant;
+    const mail = giant && (giant.querySelector('.mail') as HTMLElement | null);
+    if (!mail) return null;
+    const r = mail.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    const cs = getComputedStyle(mail);
+    const pt = parseFloat(cs.paddingTop) || 0,
+      pb = parseFloat(cs.paddingBottom) || 0;
+    const fs = parseFloat(cs.fontSize) || 20;
+    const padX = fs * 0.9,
+      padY = fs * 0.5;
+    return {
+      left: r.left - padX,
+      top: r.top + pt - padY,
+      width: r.width + padX * 2,
+      height: r.height - pt - pb + padY * 2,
+    };
+  }
+
+  // The pill follows the mail link every frame the contact block is on screen —
+  // through the whole rise and while landed — so the current parts around the
+  // email as it enters instead of popping in after the landing beat. Rect and
+  // vertical velocity are re-measured per frame (like the tech cards), so the
+  // moving pill physically pushes the field it travels through.
+  _syncMailPill(rp: number) {
+    const spray = this._spray;
+    if (!spray || !spray.setObstacles || this._rm) return;
+    if (this._obsOn) {
+      // tech cards own the obstacle slots
+      this._mailObsOn = false;
+      this._mailPrev = null;
+      return;
+    }
+    const pill = rp > 0.001 ? this._mailPillRect() : null;
+    if (!pill) {
+      if (this._mailObsOn) {
+        this._mailObsOn = false;
+        this._mailPrev = null;
+        spray.setObstacles([]);
+      }
+      return;
+    }
+    const now = performance.now();
+    const cy = pill.top + pill.height / 2;
+    const p = this._mailPrev;
+    const dts = p ? Math.min(Math.max((now - p.t) / 1000, 0.008), 0.05) : 0.016;
+    const vy = p ? (cy - p.cy) / dts : 0;
+    this._mailPrev = { cy, t: now };
+    spray.setObstacles([{ ...pill, radius: pill.height / 2, vx: 0, vy }]);
+    this._mailObsOn = true;
+  }
+
+  // Contact-email "button burst" (scene 3 beat): 1s after the riser lands, one
+  // burst of fresh grains blooms along the pill's sides and ends with a soft
+  // outward breath. The pill itself is persistent (_syncMailPill owns it);
+  // this beat only emits.
   _fireMailBurst() {
     const spray = this._spray;
-    const giant = this._el && this._el.abgiant;
-    const mail = giant && giant.querySelector('.mail');
-    if (!spray || !spray.emit || !spray.nudge || !spray.setObstacles || !mail) return;
-    if (this._obsOn) return; // tech cards own the obstacle slots — skip the beat
-    const r = mail.getBoundingClientRect();
-    if (!r.width || !r.height) return;
-    const padX = 18,
-      padY = 10;
-    const rect = { left: r.left - padX, top: r.top - padY, width: r.width + padX * 2, height: r.height + padY * 2 };
-    spray.setObstacles([{ ...rect, radius: rect.height / 2 }]);
-    this._mailObsOn = true;
-    const cy = r.top + r.height / 2;
+    if (!spray || !spray.emit || !spray.nudge || !this._mailObsOn) return;
+    const rect = this._mailPillRect();
+    if (!rect) return;
+    const cy = rect.top + rect.height / 2;
     const yT = rect.top - 4,
       yB = rect.top + rect.height + 4;
     const T = this._mailBurstTimers;
@@ -689,18 +740,13 @@ class FSPage {
         spray.nudge!(rect.left + rect.width + 10, cy, 100, 0, 1);
       }, 180)
     );
-    T.push(window.setTimeout(() => this._cancelMailBurst(), 2800));
   }
 
-  // drop the pill + any pending beat steps (also the natural end-of-beat cleanup)
+  // drop any pending beat steps (scrub-off mid-beat); the pill itself is
+  // owned by _syncMailPill and stays with the email
   _cancelMailBurst() {
     for (const t of this._mailBurstTimers) clearTimeout(t);
     this._mailBurstTimers.length = 0;
-    if (this._mailObsOn) {
-      this._mailObsOn = false;
-      // never clobber the tech cards' obstacles if they've retaken the slots
-      if (!this._obsOn && this._spray && this._spray.setObstacles) this._spray.setObstacles([]);
-    }
   }
 
   _initCards() {
@@ -1719,11 +1765,13 @@ class FSPage {
           }
         } else this._abTop = undefined;
       }
-      // Contact-email announce ("button burst"): 1s after the riser lands, an
-      // invisible button wraps the mail link and one burst of fresh grains
-      // blooms from its sides. Armed like the f2 beats — fires once per
-      // landing, re-arms only once the riser has dropped well away, and
-      // cancels mid-beat if the visitor scrubs off the landing.
+      // pill obstacle tracks the mail link through the whole rise and landing
+      this._syncMailPill(rp);
+      // Contact-email announce ("button burst"): 1s after the riser lands, one
+      // burst of fresh grains blooms from the pill's sides. Armed like the f2
+      // beats — fires once per landing, re-arms only once the riser has
+      // dropped well away, and cancels mid-beat if the visitor scrubs off the
+      // landing.
       if (rp >= 0.999) {
         if (this._mailBurstArmed && !this._rm) {
           this._mailBurstArmed = false;
